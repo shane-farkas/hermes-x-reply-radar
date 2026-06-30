@@ -27,7 +27,7 @@ RESULTS_DIR = DATA_DIR
 CANDIDATES_FILE = os.path.join(RESULTS_DIR, "candidates.json")
 
 # Default query set — tuned for AI builders, adjust for your own goal.
-# See references/query-sets.md for proven query sets for different audiences.
+# Override at runtime with X_REPLY_RADAR_QUERIES (comma-separated).
 DEFAULT_QUERIES = [
     '"just shipped" AI agent lang:en',
     '"just shipped" LLM lang:en',

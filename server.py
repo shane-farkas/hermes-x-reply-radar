@@ -7,6 +7,7 @@ reply generation via an LLM API.
 
 Configuration via environment variables:
   X_REPLY_RADAR_DIR       — data directory (default: ~/.x-reply-radar)
+  X_REPLY_RADAR_HOST       — bind address (default: 127.0.0.1; set 0.0.0.0 to expose)
   X_REPLY_RADAR_PORT       — port number (default: 8747)
   TOGETHER_API_KEY         — API key for Together AI (for on-demand reply generation)
   X_REPLY_RADAR_LLM_MODEL  — LLM model name (default: meta-llama/Llama-3.3-70B-Instruct-Turbo)
@@ -26,6 +27,10 @@ DATA_DIR = os.environ.get("X_REPLY_RADAR_DIR", os.path.expanduser("~/.x-reply-ra
 RESULTS_DIR = os.path.join(DATA_DIR, "results")
 CANDIDATES_FILE = os.path.join(DATA_DIR, "candidates.json")
 PORT = int(os.environ.get("X_REPLY_RADAR_PORT", "8747"))
+# Bind to loopback by default. The dashboard has no auth and the reply endpoint
+# spends your LLM API key, so only expose it beyond localhost deliberately
+# (e.g. X_REPLY_RADAR_HOST=0.0.0.0 behind a trusted network like Tailscale).
+HOST = os.environ.get("X_REPLY_RADAR_HOST", "127.0.0.1")
 
 # ---------- LLM config ----------
 LLM_MODEL = os.environ.get("X_REPLY_RADAR_LLM_MODEL", "meta-llama/Llama-3.3-70B-Instruct-Turbo")
@@ -448,8 +453,10 @@ class RadarHandler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     os.makedirs(RESULTS_DIR, exist_ok=True)
-    print(f"X Reply Radar dashboard running on port {PORT}")
+    print(f"X Reply Radar dashboard running on {HOST}:{PORT}")
     print(f"  http://localhost:{PORT}")
     print(f"  Data dir: {DATA_DIR}")
-    server = ThreadingHTTPServer(('0.0.0.0', PORT), RadarHandler)
+    if HOST not in ("127.0.0.1", "localhost", "::1"):
+        print(f"  WARNING: bound to {HOST} (no auth) — only do this on a trusted network")
+    server = ThreadingHTTPServer((HOST, PORT), RadarHandler)
     server.serve_forever()

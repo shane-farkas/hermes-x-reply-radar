@@ -29,22 +29,22 @@ search.py  →  candidates.json  →  server.py (dashboard on :8747)
 ## Requirements
 
 - **Python 3.8+** (stdlib only — no pip install needed)
-- **[xurl](https://github.com/nicepkg/xurl)** — X/Twitter CLI tool with API v2 access
+- **[xurl](https://github.com/xdevplatform/xurl)** — X's official curl-like CLI for the X API (handles OAuth + API v2 requests)
 - **Optional**: [Together AI](https://together.ai) API key for on-demand reply generation (Llama-3.3-70B). Works without it — just no "Generate Reply" button.
 
 ## Quick Start
 
 ```bash
 # Clone
-git clone https://github.com/USER/x-reply-radar.git
-cd x-reply-radar
+git clone https://github.com/shane-farkas/hermes-x-reply-radar.git
+cd hermes-x-reply-radar
 
 # Create data directory
 mkdir -p ~/.x-reply-radar/results
 
 # Verify xurl is installed and authenticated
 xurl auth status
-xurl whoami
+xurl /2/users/me   # confirms your account is authenticated
 
 # Run a search
 python3 search.py
@@ -64,6 +64,7 @@ All configuration is via environment variables:
 | `X_REPLY_RADAR_XURL` | `~/.local/bin/xurl` | Path to xurl binary |
 | `X_REPLY_RADAR_MY_ID` | _(empty)_ | Your X user ID — skips your own posts |
 | `X_REPLY_RADAR_QUERIES` | _(built-in defaults)_ | Comma-separated search queries (overrides defaults) |
+| `X_REPLY_RADAR_HOST` | `127.0.0.1` | Dashboard bind address. Defaults to localhost only; set `0.0.0.0` to expose on a trusted network (no auth — see warning below) |
 | `X_REPLY_RADAR_PORT` | `8747` | Dashboard port |
 | `TOGETHER_API_KEY` | _(env)_ | Together AI key for on-demand reply generation |
 | `X_REPLY_RADAR_LLM_MODEL` | `meta-llama/Llama-3.3-70B-Instruct-Turbo` | LLM model for reply generation |
@@ -72,7 +73,7 @@ All configuration is via environment variables:
 
 ### Customizing search queries
 
-The default query set targets AI builders. For other audiences, set `X_REPLY_RADAR_QUERIES` or edit the `DEFAULT_QUERIES` list in `search.py`. See [`references/query-sets.md`](references/query-sets.md) for proven query sets (AI builders, drone/robotics, etc.).
+The default query set targets AI builders. For other audiences, set `X_REPLY_RADAR_QUERIES` or edit the `DEFAULT_QUERIES` list in `search.py`.
 
 ### Customizing the reply prompt
 

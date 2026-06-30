@@ -15,11 +15,11 @@ Complete setup for the automated X Reply Radar dashboard mode.
 
 ### 1. Install xurl
 
-Install [xurl](https://github.com/nicepkg/xurl) and authenticate:
+Install [xurl](https://github.com/xdevplatform/xurl) and authenticate:
 
 ```bash
 xurl auth status
-xurl whoami
+xurl /2/users/me
 ```
 
 ### 2. Create data directory
