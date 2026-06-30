@@ -29,8 +29,22 @@ search.py  →  candidates.json  →  server.py (dashboard on :8747)
 ## Requirements
 
 - **Python 3.8+** (stdlib only — no pip install needed)
-- **[xurl](https://github.com/xdevplatform/xurl)** — X's official curl-like CLI for the X API (handles OAuth + API v2 requests)
+- **[xurl](https://github.com/xdevplatform/xurl)** — X's official curl-like CLI for the X API. Handles OAuth and lets you hit raw API v2 paths (`xurl /2/tweets/search/recent?...`, which `search.py` uses) as well as convenience **shortcut commands** like `xurl whoami`, `xurl read POST_ID`, and `xurl search "QUERY"`. See [xurl shortcuts](#xurl-commands-used) below.
+- **An X API project** with access to the v2 recent-search endpoint (`GET /2/tweets/search/recent`). This is a *read* endpoint — make sure your [X API plan](https://developer.x.com/en/portal/products) includes it; the Free tier's read access is limited. Run `xurl /2/tweets/search/recent?query=test&max_results=10` to confirm your credentials can reach it.
 - **Optional**: [Together AI](https://together.ai) API key for on-demand reply generation (Llama-3.3-70B). Works without it — just no "Generate Reply" button.
+
+### xurl commands used
+
+The interactive/skill workflow leans on a few of xurl's [shortcut commands](https://github.com/xdevplatform/xurl) (run `xurl --help` for the full list):
+
+| Command | Purpose |
+|---------|---------|
+| `xurl auth status` | Show which apps/accounts are authenticated |
+| `xurl whoami` | Confirm the authenticated account (used to skip your own posts) |
+| `xurl read POST_ID_OR_URL` | Fetch a single post's full text + metrics for context |
+| `xurl search "QUERY"` | Quick recent-search from the shell |
+
+The standalone `search.py` does **not** use the shortcuts — it calls the raw `/2/tweets/search/recent` path directly so it can request specific `tweet.fields`/`expansions` in one query.
 
 ## Quick Start
 
@@ -181,6 +195,15 @@ Posts are filtered out if they:
 - Are from your own account (if `X_REPLY_RADAR_MY_ID` is set)
 
 Authors are tagged as "builders" if their bio/name contains signals like: building, shipping, engineer, founder, developer, maker, tinker, hardware, software, AI, ML, robot. Builder-tagged posts rank higher.
+
+## Security
+
+The dashboard has **no authentication**. Keep this in mind:
+
+- **It binds to `127.0.0.1` (localhost) by default.** Only your machine can reach it. To expose it (e.g. over a Tailscale/VPN IP), set `X_REPLY_RADAR_HOST=0.0.0.0` — but only on a trusted network. server.py prints a warning when bound beyond loopback.
+- **The `/api/generate-reply` endpoint spends your `TOGETHER_API_KEY`.** Anyone who can reach an exposed dashboard can run up LLM costs. If you must expose it publicly, put it behind a reverse proxy with auth (or an SSH tunnel) rather than binding `0.0.0.0` directly.
+- **Never commit secrets.** `.env` files, `candidates.json`, and `results/` are gitignored. Keep your `TOGETHER_API_KEY` and xurl OAuth tokens out of the repo.
+- **This tool never posts.** It only reads public posts and drafts replies for you to copy and post manually.
 
 ## License
 
