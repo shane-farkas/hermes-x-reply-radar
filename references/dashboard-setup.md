@@ -19,7 +19,7 @@ Install [xurl](https://github.com/xdevplatform/xurl) and authenticate:
 
 ```bash
 xurl auth status
-xurl /2/users/me
+xurl whoami
 ```
 
 ### 2. Create data directory

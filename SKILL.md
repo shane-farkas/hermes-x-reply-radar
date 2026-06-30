@@ -213,7 +213,7 @@ import json
 ids_to_read = [...]  # from Step 5 selection + any referenced tweet IDs
 
 for post_id in ids_to_read:
-    result = terminal(f"xurl '/2/tweets/{post_id}?tweet.fields=created_at,public_metrics' 2>&1")
+    result = terminal(f'xurl read {post_id} 2>&1')
     try:
         d = json.loads(result["output"])
         t = d.get("data", {})
@@ -298,7 +298,7 @@ Instead of running inline in a chat session, the radar can run on a cron schedul
 Run `search.py` every 4 hours. The cron agent or script then:
 1. Reads `candidates.json`
 2. Selects top 5-8 candidates
-3. Reads full context with `xurl '/2/tweets/POST_ID?tweet.fields=created_at,public_metrics'`
+3. Reads full context with `xurl read POST_ID`
 4. Drafts replies per the goal's style rules
 5. Writes results to `results/results_YYYYMMDD_HHMMSS.json`
 
@@ -310,7 +310,7 @@ Run `search.py` every 4 hours. The cron agent or script then:
 2. Respect the user's style constraints from the goal EXACTLY.
 3. If no good candidates found, say so honestly. Don't force bad fits.
 4. Keep raw JSON out of the conversation — use execute_code for batch search/filter.
-5. Verify xurl auth before starting: `xurl auth status` + `xurl /2/users/me`. Do NOT pipe either to python3 for parsing — it triggers a security scan. Run them bare or inside execute_code.
+5. Verify xurl auth before starting: `xurl auth status` + `xurl whoami`. Do NOT pipe either to python3 for parsing — it triggers a security scan. Run them bare or inside execute_code.
 6. The 4-hour window is a default. If the goal specifies a different window, use that.
 7. Skip the user's own posts (match author_id against the whoami result).
 8. If the goal names specific accounts to monitor, always include `from:handle` queries.
@@ -319,6 +319,6 @@ Run `search.py` every 4 hours. The cron agent or script then:
 
 - **Security scan on `xurl | python3` pipes**: Piping xurl output to python3 in a terminal call triggers a HIGH security scan. Fix: always use `execute_code` with `hermes_tools.terminal` for any xurl output that needs JSON parsing.
 - **Amplification posts inflate candidate count**: Many "just shipped" / "built a" results are amplifiers sharing someone else's work. Check whether the post text describes the author's own work or someone else's.
-- **Tweet reads on video/link-only posts return bare URLs**: Some quoted posts are just t.co links with no text. Don't treat this as a parse error.
+- **`xurl read` on video/link-only posts returns bare URLs**: Some quoted posts are just t.co links with no text. Don't treat this as a parse error.
 - **Copy button fails on non-HTTPS**: `navigator.clipboard` API only works on HTTPS or localhost. server.py has a `document.execCommand('copy')` fallback for non-secure contexts.
 - **CSS class vs id mismatch breaks flex tabs**: The tabs container must have `class="tabs"` (not just `id="tabs"`) for the flex layout CSS to apply.

@@ -44,7 +44,7 @@ mkdir -p ~/.x-reply-radar/results
 
 # Verify xurl is installed and authenticated
 xurl auth status
-xurl /2/users/me   # confirms your account is authenticated
+xurl whoami
 
 # Run a search
 python3 search.py
