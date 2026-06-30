@@ -48,6 +48,28 @@ The standalone `search.py` does **not** use the shortcuts - it calls the raw `/2
 
 ## Quick Start
 
+### Tell your agent to install (recommended for remote Hermes)
+
+If you run Hermes Agent on a remote server (VPS, Docker, etc.), give your agent the install command and ask it to run it:
+
+> Install x-reply-radar: run `curl -fsSL https://raw.githubusercontent.com/shane-farkas/hermes-x-reply-radar/main/install.sh | bash`
+
+Your agent will execute the installer on the server where Hermes runs.
+
+### One-line install (local Hermes only)
+
+If you have direct shell access to the machine where Hermes runs:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/shane-farkas/hermes-x-reply-radar/main/install.sh | bash
+```
+
+The installer detects whether you're running Hermes Agent and installs accordingly:
+- **Hermes**: copies `SKILL.md` to `~/.hermes/skills/social-media/x-reply-radar/`
+- **Other agents**: copies scripts to `./` for direct invocation
+
+### Manual setup
+
 ```bash
 # Clone
 git clone https://github.com/shane-farkas/hermes-x-reply-radar.git
