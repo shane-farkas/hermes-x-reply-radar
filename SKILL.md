@@ -7,7 +7,7 @@ prerequisites:
   commands: [xurl]
 ---
 
-# x-reply-radar — Strategic X Engagement Finder & Reply Drafter
+# x-reply-radar - Strategic X Engagement Finder & Reply Drafter
 
 Given a goal (who to reach, what angle, what style rules), this skill:
 1. Searches X for recent posts (last 4 hours) matching the target audience
@@ -20,7 +20,7 @@ The user posts the replies themselves on X. This skill never auto-posts.
 
 ## Workflow
 
-### Step 1 — Intake the Goal
+### Step 1 - Intake the Goal
 
 The user provides a goal that may include:
 - Target audience (who they want to reach)
@@ -31,7 +31,7 @@ The user provides a goal that may include:
 
 Parse the goal and extract these components. If the goal is ambiguous, ask for clarification before proceeding.
 
-### Step 2 — Gather Builder Context (if GitHub URL provided)
+### Step 2 - Gather Builder Context (if GitHub URL provided)
 
 If the goal includes a GitHub URL, fetch the user's public repos to understand what they actually build. Use `web_extract` on the profile URL, or:
 
@@ -49,26 +49,26 @@ Summarize the repos concisely (name, description, language). Use this to:
 - Understand technical depth and domains
 - NEVER force projects into replies unless directly relevant to the post's pain point
 
-### Step 3 — Derive Search Queries
+### Step 3 - Derive Search Queries
 
 From the goal's audience and topic areas, derive 6-12 search queries. Patterns that find builders showing their work:
 
-- `"just shipped" <domain_term>` — product launches
-- `"working on" <domain_term>` — work in progress
-- `"built a" <domain_term>` — completed builds
-- `"#buildinpublic" <domain_term> lang:en` — builder community
-- `"show HN" <domain_term>` — show-and-tell energy
-- `"anyone using" <tool_term>` — pain point surfacing
-- `"struggling with" <domain_term>` — help wanted
-- `"just launched" <domain_term>` — new products
-- `"open source" <domain_term>` — OSS builders
-- `from:<specific_handle>` — if goal names specific accounts to monitor
+- `"just shipped" <domain_term>` - product launches
+- `"working on" <domain_term>` - work in progress
+- `"built a" <domain_term>` - completed builds
+- `"#buildinpublic" <domain_term> lang:en` - builder community
+- `"show HN" <domain_term>` - show-and-tell energy
+- `"anyone using" <tool_term>` - pain point surfacing
+- `"struggling with" <domain_term>` - help wanted
+- `"just launched" <domain_term>` - new products
+- `"open source" <domain_term>` - OSS builders
+- `from:<specific_handle>` - if goal names specific accounts to monitor
 
 Domain terms are extracted from the goal. For an AI/robotics goal: "AI agent", "LLM", "inference", "robotics", "local model", "fine-tune", "RAG", "embedding", "autonomous", "Jetson", "edge compute", etc.
 
 The `DEFAULT_QUERIES` list in `search.py` is a proven starting set tuned for AI builders (15 queries). Adapt the patterns above to the goal's audience.
 
-### Step 4 — Execute Searches and Filter
+### Step 4 - Execute Searches and Filter
 
 Use `execute_code` to batch all searches, parse JSON, filter, and deduplicate. This keeps raw JSON out of the conversation context.
 
@@ -192,7 +192,7 @@ for i, p in enumerate(filtered[:15], 1):
 print(f"Total unique: {len(unique)} | Recent (4h): {len(recent)} | After filters: {len(filtered)}")
 ```
 
-### Step 5 — Select Top Candidates
+### Step 5 - Select Top Candidates
 
 From the filtered list, pick 5-10 best posts. For each, verify:
 - The post has a natural opening for a technical observation or question
@@ -202,7 +202,7 @@ From the filtered list, pick 5-10 best posts. For each, verify:
 
 If fewer than 5 good candidates exist, report what you found honestly. Don't force bad fits.
 
-### Step 6 — Read Full Context
+### Step 6 - Read Full Context
 
 Batch all context reads in `execute_code` using `hermes_tools.terminal`:
 
@@ -229,12 +229,12 @@ If the post is a reply, include the parent post ID. If it quotes another tweet, 
 
 #### Amplification posts
 
-Some results are amplification posts — someone sharing/boosting another person's build. For these:
+Some results are amplification posts - someone sharing/boosting another person's build. For these:
 - Note in the presentation that it's an amplification post
 - The reply may make more sense directed at the original builder
 - Offer to find the original builder if the user prefers to reply there instead
 
-### Step 7 — Draft Replies
+### Step 7 - Draft Replies
 
 For each selected post, draft a reply following the user's style constraints from the goal.
 
@@ -260,13 +260,13 @@ For each selected post, draft a reply following the user's style constraints fro
 - Replies longer than the original post
 - Replies that argue or correct unless the user's goal explicitly calls for that
 
-### Step 8 — Present for Review
+### Step 8 - Present for Review
 
 Present each candidate in this format:
 
 ```
 POST N
-  Author: @handle (Name) — Followers: N
+  Author: @handle (Name) - Followers: N
   Bio: (first 100 chars)
   URL: https://x.com/handle/status/ID
   Post text: (full text)
@@ -288,10 +288,10 @@ Instead of running inline in a chat session, the radar can run on a cron schedul
 
 ### Architecture
 
-- `search.py` — standalone search script (subprocess + xurl, no agent tools needed). Runs queries, filters, writes `candidates.json`.
-- `server.py` — zero-dependency web dashboard (Python stdlib `http.server`). Serves on port 8747.
-- `results/` — timestamped JSON files from each cron run.
-- `candidates.json` — latest raw candidates.
+- `search.py` - standalone search script (subprocess + xurl, no agent tools needed). Runs queries, filters, writes `candidates.json`.
+- `server.py` - zero-dependency web dashboard (Python stdlib `http.server`). Serves on port 8747.
+- `results/` - timestamped JSON files from each cron run.
+- `candidates.json` - latest raw candidates.
 
 ### Cron job
 
@@ -309,8 +309,8 @@ Run `search.py` every 4 hours. The cron agent or script then:
 1. NEVER auto-post. Always present drafts for manual review.
 2. Respect the user's style constraints from the goal EXACTLY.
 3. If no good candidates found, say so honestly. Don't force bad fits.
-4. Keep raw JSON out of the conversation — use execute_code for batch search/filter.
-5. Verify xurl auth before starting: `xurl auth status` + `xurl whoami`. Do NOT pipe either to python3 for parsing — it triggers a security scan. Run them bare or inside execute_code.
+4. Keep raw JSON out of the conversation - use execute_code for batch search/filter.
+5. Verify xurl auth before starting: `xurl auth status` + `xurl whoami`. Do NOT pipe either to python3 for parsing - it triggers a security scan. Run them bare or inside execute_code.
 6. The 4-hour window is a default. If the goal specifies a different window, use that.
 7. Skip the user's own posts (match author_id against the whoami result).
 8. If the goal names specific accounts to monitor, always include `from:handle` queries.

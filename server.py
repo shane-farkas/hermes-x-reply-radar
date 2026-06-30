@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
-"""X Reply Radar — Web Dashboard
+"""X Reply Radar: Web Dashboard
 
 Zero-dependency HTTP server (Python stdlib only). Serves search candidates
 with a browsable UI, draft replies, copy buttons, history, and on-demand
 reply generation via an LLM API.
 
 Configuration via environment variables:
-  X_REPLY_RADAR_DIR       — data directory (default: ~/.x-reply-radar)
-  X_REPLY_RADAR_HOST       — bind address (default: 127.0.0.1; set 0.0.0.0 to expose)
-  X_REPLY_RADAR_PORT       — port number (default: 8747)
-  TOGETHER_API_KEY         — API key for Together AI (for on-demand reply generation)
-  X_REPLY_RADAR_LLM_MODEL  — LLM model name (default: meta-llama/Llama-3.3-70B-Instruct-Turbo)
-  X_REPLY_RADAR_LLM_URL    — LLM API endpoint (default: Together AI chat completions)
-  X_REPLY_RADAR_REPLY_PROMPT — system prompt for reply generation (see DEFAULT_REPLY_PROMPT below)
+  X_REPLY_RADAR_DIR          data directory (default: ~/.x-reply-radar)
+  X_REPLY_RADAR_HOST         bind address (default: 127.0.0.1; set 0.0.0.0 to expose)
+  X_REPLY_RADAR_PORT         port number (default: 8747)
+  X_REPLY_RADAR_LLM_PROVIDER which LLM to use: together (default), openai, or anthropic
+  X_REPLY_RADAR_LLM_MODEL    model name (default depends on the provider)
+  X_REPLY_RADAR_LLM_URL      override the API endpoint (default depends on the provider)
+  X_REPLY_RADAR_REPLY_PROMPT system prompt for reply generation (see DEFAULT_REPLY_PROMPT below)
+
+API key: set the key env var for your provider (TOGETHER_API_KEY, OPENAI_API_KEY,
+or ANTHROPIC_API_KEY), or a generic X_REPLY_RADAR_API_KEY. Keys are read from the
+environment or from ~/.x-reply-radar/.env (also ~/.hermes/.env, ~/.env).
 """
 import json
 import os
@@ -33,8 +37,43 @@ PORT = int(os.environ.get("X_REPLY_RADAR_PORT", "8747"))
 HOST = os.environ.get("X_REPLY_RADAR_HOST", "127.0.0.1")
 
 # ---------- LLM config ----------
-LLM_MODEL = os.environ.get("X_REPLY_RADAR_LLM_MODEL", "meta-llama/Llama-3.3-70B-Instruct-Turbo")
-LLM_URL = os.environ.get("X_REPLY_RADAR_LLM_URL", "https://api.together.xyz/v1/chat/completions")
+# Three providers work out of the box. Pick one with X_REPLY_RADAR_LLM_PROVIDER
+# and set the matching API key. "together" and "openai" share the
+# OpenAI-compatible chat-completions shape; "anthropic" uses the Messages API.
+# Any other OpenAI-compatible endpoint works too: set provider to "openai" and
+# override X_REPLY_RADAR_LLM_URL / X_REPLY_RADAR_LLM_MODEL.
+PROVIDERS = {
+    "together": {
+        "style": "openai",
+        "url": "https://api.together.xyz/v1/chat/completions",
+        "model": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        "key_env": "TOGETHER_API_KEY",
+    },
+    "openai": {
+        "style": "openai",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "model": "gpt-4o-mini",
+        "key_env": "OPENAI_API_KEY",
+    },
+    "anthropic": {
+        "style": "anthropic",
+        "url": "https://api.anthropic.com/v1/messages",
+        "model": "claude-haiku-4-5",
+        "key_env": "ANTHROPIC_API_KEY",
+    },
+}
+
+PROVIDER = os.environ.get("X_REPLY_RADAR_LLM_PROVIDER", "together").lower()
+if PROVIDER not in PROVIDERS:
+    PROVIDER = "together"
+_provider = PROVIDERS[PROVIDER]
+
+# Explicit env overrides win over the provider's defaults.
+LLM_STYLE = _provider["style"]
+LLM_URL = os.environ.get("X_REPLY_RADAR_LLM_URL", _provider["url"])
+LLM_MODEL = os.environ.get("X_REPLY_RADAR_LLM_MODEL", _provider["model"])
+LLM_KEY_ENV = _provider["key_env"]
+ANTHROPIC_VERSION = os.environ.get("X_REPLY_RADAR_ANTHROPIC_VERSION", "2023-06-01")
 
 DEFAULT_REPLY_PROMPT = """You draft a concise reply to a social media post on behalf of the user.
 
@@ -52,11 +91,17 @@ REPLY_SYSTEM_PROMPT = os.environ.get("X_REPLY_RADAR_REPLY_PROMPT", DEFAULT_REPLY
 
 
 def _load_api_key():
-    """Load TOGETHER_API_KEY from env or common env file locations."""
-    key = os.environ.get("TOGETHER_API_KEY", "")
-    if key:
-        return key
-    # Check common env file locations
+    """Find the API key for the active provider.
+
+    Checks the provider's key env var (TOGETHER_API_KEY, OPENAI_API_KEY, or
+    ANTHROPIC_API_KEY) and a generic X_REPLY_RADAR_API_KEY, looking first in the
+    environment and then in common .env files.
+    """
+    candidates = [LLM_KEY_ENV, "X_REPLY_RADAR_API_KEY"]
+    for name in candidates:
+        val = os.environ.get(name, "")
+        if val:
+            return val
     for env_path in (
         os.path.expanduser("~/.hermes/.env"),
         os.path.expanduser("~/.x-reply-radar/.env"),
@@ -67,19 +112,21 @@ def _load_api_key():
         with open(env_path) as f:
             for line in f:
                 line = line.strip()
-                if line.startswith("export TOGETHER_API_KEY="):
-                    return line.split("=", 1)[1].strip().strip('"').strip("'")
-                if line.startswith("TOGETHER_API_KEY="):
-                    return line.split("=", 1)[1].strip().strip('"').strip("'")
+                if line.startswith("export "):
+                    line = line[len("export "):]
+                for name in candidates:
+                    prefix = name + "="
+                    if line.startswith(prefix):
+                        return line[len(prefix):].strip().strip('"').strip("'")
     return ""
 
 
 def generate_reply_llm(post_data: dict) -> dict:
-    """Call LLM API to generate a reply draft.
+    """Call the configured LLM provider to generate a reply draft.
     Returns {"draft_reply": "..."} or {"error": "..."}."""
     api_key = _load_api_key()
     if not api_key:
-        return {"error": "TOGETHER_API_KEY not found. Set it in env or ~/.x-reply-radar/.env"}
+        return {"error": f"No API key found. Set {LLM_KEY_ENV} in env or ~/.x-reply-radar/.env"}
 
     text = post_data.get("text", "")
     username = post_data.get("username", "unknown")
@@ -90,21 +137,38 @@ def generate_reply_llm(post_data: dict) -> dict:
     if author_bio:
         user_msg += f"\nAuthor bio: {author_bio}"
 
-    body = json.dumps({
-        "model": LLM_MODEL,
-        "messages": [
-            {"role": "system", "content": REPLY_SYSTEM_PROMPT},
-            {"role": "user", "content": user_msg},
-        ],
-        "temperature": 0.5,
-        "max_tokens": 200,
-    }).encode()
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-        "User-Agent": "x-reply-radar/1.0",
-    }
+    if LLM_STYLE == "anthropic":
+        # Anthropic Messages API: system is a top-level field, the reply text
+        # comes back as content[0].text, and auth uses x-api-key.
+        body = json.dumps({
+            "model": LLM_MODEL,
+            "max_tokens": 200,
+            "system": REPLY_SYSTEM_PROMPT,
+            "messages": [{"role": "user", "content": user_msg}],
+        }).encode()
+        headers = {
+            "x-api-key": api_key,
+            "anthropic-version": ANTHROPIC_VERSION,
+            "content-type": "application/json",
+            "user-agent": "x-reply-radar/1.0",
+        }
+    else:
+        # OpenAI-compatible chat completions (Together, OpenAI, or any
+        # compatible endpoint via X_REPLY_RADAR_LLM_URL).
+        body = json.dumps({
+            "model": LLM_MODEL,
+            "messages": [
+                {"role": "system", "content": REPLY_SYSTEM_PROMPT},
+                {"role": "user", "content": user_msg},
+            ],
+            "temperature": 0.5,
+            "max_tokens": 200,
+        }).encode()
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "x-reply-radar/1.0",
+        }
 
     prev = socket.getdefaulttimeout()
     socket.setdefaulttimeout(30)
@@ -112,7 +176,10 @@ def generate_reply_llm(post_data: dict) -> dict:
         req = urllib.request.Request(LLM_URL, data=body, headers=headers)
         with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read())
-        reply = data["choices"][0]["message"]["content"].strip()
+        if LLM_STYLE == "anthropic":
+            reply = data["content"][0]["text"].strip()
+        else:
+            reply = data["choices"][0]["message"]["content"].strip()
         return {"draft_reply": reply}
     except Exception as exc:
         return {"error": f"{type(exc).__name__}: {str(exc)[:150]}"}
@@ -457,6 +524,6 @@ if __name__ == '__main__':
     print(f"  http://localhost:{PORT}")
     print(f"  Data dir: {DATA_DIR}")
     if HOST not in ("127.0.0.1", "localhost", "::1"):
-        print(f"  WARNING: bound to {HOST} (no auth) — only do this on a trusted network")
+        print(f"  WARNING: bound to {HOST} (no auth) - only do this on a trusted network")
     server = ThreadingHTTPServer((HOST, PORT), RadarHandler)
     server.serve_forever()

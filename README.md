@@ -1,6 +1,6 @@
 # X Reply Radar
 
-Strategic X/Twitter engagement finder with a web dashboard. Searches X for recent posts worth replying to, filters out noise, drafts replies in your voice for manual review — **never auto-posts**.
+Strategic X/Twitter engagement finder with a web dashboard. Searches X for recent posts worth replying to, filters out noise, drafts replies in your voice for manual review - **never auto-posts**.
 
 ## What it does
 
@@ -8,7 +8,7 @@ Strategic X/Twitter engagement finder with a web dashboard. Searches X for recen
 2. **Filters** out buried threads, dead posts, retweets, crypto, and philosophical noise
 3. **Ranks** by builder signals + engagement to surface the best candidates
 4. **Drafts** replies in your voice for manual review and posting
-5. **Dashboard** — browsable web UI with tabs, copy buttons, history, and on-demand reply generation
+5. **Dashboard** - browsable web UI with tabs, copy buttons, history, and on-demand reply generation
 
 You post the replies yourself on X. This tool never auto-posts.
 
@@ -22,16 +22,16 @@ search.py  →  candidates.json  →  server.py (dashboard on :8747)
 | Component | Description |
 |-----------|-------------|
 | `search.py` | Standalone search script. Calls `xurl` via subprocess, filters/dedupes, writes `candidates.json` with top 15 ranked + all filtered posts. No external dependencies. |
-| `server.py` | Zero-dependency web dashboard (Python stdlib `http.server` only — no Flask). Serves a single-page app with inline JS/CSS. |
+| `server.py` | Zero-dependency web dashboard (Python stdlib `http.server` only - no Flask). Serves a single-page app with inline JS/CSS. |
 | `results/` | Timestamped JSON files from each cron/manual run. |
 | `candidates.json` | Latest raw candidates (intermediate file). |
 
 ## Requirements
 
-- **Python 3.8+** (stdlib only — no pip install needed)
-- **[xurl](https://github.com/xdevplatform/xurl)** — X's official curl-like CLI for the X API. Handles OAuth and lets you hit raw API v2 paths (`xurl /2/tweets/search/recent?...`, which `search.py` uses) as well as convenience **shortcut commands** like `xurl whoami`, `xurl read POST_ID`, and `xurl search "QUERY"`. See [xurl shortcuts](#xurl-commands-used) below.
-- **An X API project** with access to the v2 recent-search endpoint (`GET /2/tweets/search/recent`). This is a *read* endpoint — make sure your [X API plan](https://developer.x.com/en/portal/products) includes it; the Free tier's read access is limited. Run `xurl /2/tweets/search/recent?query=test&max_results=10` to confirm your credentials can reach it.
-- **Optional**: [Together AI](https://together.ai) API key for on-demand reply generation (Llama-3.3-70B). Works without it — just no "Generate Reply" button.
+- **Python 3.8+** (stdlib only - no pip install needed)
+- **[xurl](https://github.com/xdevplatform/xurl)** - X's official curl-like CLI for the X API. Handles OAuth and lets you hit raw API v2 paths (`xurl /2/tweets/search/recent?...`, which `search.py` uses) as well as convenience **shortcut commands** like `xurl whoami`, `xurl read POST_ID`, and `xurl search "QUERY"`. See [xurl shortcuts](#xurl-commands-used) below.
+- **An X API project** with access to the v2 recent-search endpoint (`GET /2/tweets/search/recent`). This is a *read* endpoint - make sure your [X API plan](https://developer.x.com/en/portal/products) includes it; the Free tier's read access is limited. Run `xurl /2/tweets/search/recent?query=test&max_results=10` to confirm your credentials can reach it.
+- **Optional**: an LLM API key for on-demand reply generation. Pick one of [Together AI](https://together.ai), [OpenAI](https://platform.openai.com), or [Anthropic](https://console.anthropic.com) (see [LLM provider](#llm-provider) below). Works without it; you just don't get the "Generate Reply" button.
 
 ### xurl commands used
 
@@ -44,7 +44,7 @@ The interactive/skill workflow leans on a few of xurl's [shortcut commands](http
 | `xurl read POST_ID_OR_URL` | Fetch a single post's full text + metrics for context |
 | `xurl search "QUERY"` | Quick recent-search from the shell |
 
-The standalone `search.py` does **not** use the shortcuts — it calls the raw `/2/tweets/search/recent` path directly so it can request specific `tweet.fields`/`expansions` in one query.
+The standalone `search.py` does **not** use the shortcuts - it calls the raw `/2/tweets/search/recent` path directly so it can request specific `tweet.fields`/`expansions` in one query.
 
 ## Quick Start
 
@@ -76,31 +76,52 @@ All configuration is via environment variables:
 |----------|---------|-------------|
 | `X_REPLY_RADAR_DIR` | `~/.x-reply-radar` | Data directory for candidates.json and results/ |
 | `X_REPLY_RADAR_XURL` | `~/.local/bin/xurl` | Path to xurl binary |
-| `X_REPLY_RADAR_MY_ID` | _(empty)_ | Your X user ID — skips your own posts |
+| `X_REPLY_RADAR_MY_ID` | _(empty)_ | Your X user ID - skips your own posts |
 | `X_REPLY_RADAR_QUERIES` | _(built-in defaults)_ | Comma-separated search queries (overrides defaults) |
-| `X_REPLY_RADAR_HOST` | `127.0.0.1` | Dashboard bind address. Defaults to localhost only; set `0.0.0.0` to expose on a trusted network (no auth — see warning below) |
+| `X_REPLY_RADAR_HOST` | `127.0.0.1` | Dashboard bind address. Defaults to localhost only; set `0.0.0.0` to expose on a trusted network (no auth - see warning below) |
 | `X_REPLY_RADAR_PORT` | `8747` | Dashboard port |
-| `TOGETHER_API_KEY` | _(env)_ | Together AI key for on-demand reply generation |
-| `X_REPLY_RADAR_LLM_MODEL` | `meta-llama/Llama-3.3-70B-Instruct-Turbo` | LLM model for reply generation |
-| `X_REPLY_RADAR_LLM_URL` | Together AI endpoint | LLM API endpoint (any OpenAI-compatible API) |
+| `X_REPLY_RADAR_LLM_PROVIDER` | `together` | Which LLM to use: `together`, `openai`, or `anthropic` |
+| `TOGETHER_API_KEY` / `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` | _(env)_ | API key for your chosen provider. `X_REPLY_RADAR_API_KEY` works as a generic fallback |
+| `X_REPLY_RADAR_LLM_MODEL` | provider default | Model for reply generation (defaults: `meta-llama/Llama-3.3-70B-Instruct-Turbo`, `gpt-4o-mini`, `claude-haiku-4-5`) |
+| `X_REPLY_RADAR_LLM_URL` | provider default | Override the API endpoint (useful for any OpenAI-compatible host) |
 | `X_REPLY_RADAR_REPLY_PROMPT` | _(built-in default)_ | System prompt for reply generation |
 
 ### Customizing search queries
 
 The default query set targets AI builders. For other audiences, set `X_REPLY_RADAR_QUERIES` or edit the `DEFAULT_QUERIES` list in `search.py`.
 
+### LLM provider
+
+The "Generate Reply" button (and the cron drafting flow) calls one LLM provider. Set `X_REPLY_RADAR_LLM_PROVIDER` and the matching API key:
+
+```bash
+# Together (default) - Llama-3.3-70B
+export TOGETHER_API_KEY=your_key_here
+
+# OpenAI - gpt-4o-mini
+export X_REPLY_RADAR_LLM_PROVIDER=openai
+export OPENAI_API_KEY=your_key_here
+
+# Anthropic - claude-haiku-4-5
+export X_REPLY_RADAR_LLM_PROVIDER=anthropic
+export ANTHROPIC_API_KEY=your_key_here
+```
+
+`together` and `openai` use the OpenAI-compatible chat-completions API; `anthropic` uses the Messages API. Each provider has a sensible default model; override it with `X_REPLY_RADAR_LLM_MODEL`. To point at any other OpenAI-compatible host (a local model, a proxy, OpenRouter, etc.), keep the provider on `openai` and set `X_REPLY_RADAR_LLM_URL`. Keys can also live in `~/.x-reply-radar/.env` instead of the environment.
+
 ### Customizing the reply prompt
 
-Set `X_REPLY_RADAR_REPLY_PROMPT` to control how the LLM drafts replies. The default is generic — add your name, projects, and style rules:
+Set `X_REPLY_RADAR_REPLY_PROMPT` to control how the LLM drafts replies. The default is generic, so add your name, projects, and style rules:
 
 ```bash
 export X_REPLY_RADAR_REPLY_PROMPT="You draft replies as [your name]. Rules: casual, lowercase, one sharp question per reply. Never cheerlead. Keep under 280 chars."
 ```
 
-Or write it to `~/.x-reply-radar/.env`:
+Or write it to `~/.x-reply-radar/.env` (any of the supported key names works here):
 
 ```
-TOGETHER_API_KEY=your_key_here
+ANTHROPIC_API_KEY=your_key_here
+X_REPLY_RADAR_LLM_PROVIDER=anthropic
 X_REPLY_RADAR_REPLY_PROMPT=Your custom system prompt here
 ```
 
@@ -171,15 +192,15 @@ Each run writes `results_YYYYMMDD_HHMMSS.json`:
 
 ## Dashboard UI
 
-- **Suggested tab** — selected candidates with draft replies, copy buttons, "Open on X" links
-- **All Filtered tab** — every post that passed filters but wasn't selected. Each card has a "Generate Reply" button for on-demand LLM drafting.
-- **History dropdown** — browse past runs
-- **Copy buttons** — with `execCommand` fallback for non-HTTPS access (e.g. over Tailscale IP)
-- **Auto-refresh** — every 5 minutes
+- **Suggested tab** - selected candidates with draft replies, copy buttons, "Open on X" links
+- **All Filtered tab** - every post that passed filters but wasn't selected. Each card has a "Generate Reply" button for on-demand LLM drafting.
+- **History dropdown** - browse past runs
+- **Copy buttons** - with `execCommand` fallback for non-HTTPS access (e.g. over Tailscale IP)
+- **Auto-refresh** - every 5 minutes
 
 ## Hermes Agent Integration
 
-This repo includes a `SKILL.md` for [Hermes Agent](https://hermes-agent.nousresearch.com/) users. If you run Hermes, the skill enables a chat-driven workflow where the agent runs searches, reads full post context, and drafts replies in your voice — all from a messaging platform like Telegram.
+This repo includes a `SKILL.md` for [Hermes Agent](https://hermes-agent.nousresearch.com/) users. If you run Hermes, the skill enables a chat-driven workflow where the agent runs searches, reads full post context, and drafts replies in your voice - all from a messaging platform like Telegram.
 
 See [`SKILL.md`](SKILL.md) and [`references/dashboard-setup.md`](references/dashboard-setup.md) for the full Hermes integration guide.
 
@@ -200,11 +221,11 @@ Authors are tagged as "builders" if their bio/name contains signals like: buildi
 
 The dashboard has **no authentication**. Keep this in mind:
 
-- **It binds to `127.0.0.1` (localhost) by default.** Only your machine can reach it. To expose it (e.g. over a Tailscale/VPN IP), set `X_REPLY_RADAR_HOST=0.0.0.0` — but only on a trusted network. server.py prints a warning when bound beyond loopback.
-- **The `/api/generate-reply` endpoint spends your `TOGETHER_API_KEY`.** Anyone who can reach an exposed dashboard can run up LLM costs. If you must expose it publicly, put it behind a reverse proxy with auth (or an SSH tunnel) rather than binding `0.0.0.0` directly.
-- **Never commit secrets.** `.env` files, `candidates.json`, and `results/` are gitignored. Keep your `TOGETHER_API_KEY` and xurl OAuth tokens out of the repo.
+- **It binds to `127.0.0.1` (localhost) by default.** Only your machine can reach it. To expose it (e.g. over a Tailscale/VPN IP), set `X_REPLY_RADAR_HOST=0.0.0.0` - but only on a trusted network. server.py prints a warning when bound beyond loopback.
+- **The `/api/generate-reply` endpoint spends your LLM API key.** Anyone who can reach an exposed dashboard can run up LLM costs. If you must expose it publicly, put it behind a reverse proxy with auth (or an SSH tunnel) rather than binding `0.0.0.0` directly.
+- **Never commit secrets.** `.env` files, `candidates.json`, and `results/` are gitignored. Keep your LLM API key and xurl OAuth tokens out of the repo.
 - **This tool never posts.** It only reads public posts and drafts replies for you to copy and post manually.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE).

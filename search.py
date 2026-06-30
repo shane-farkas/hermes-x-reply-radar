@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""X Reply Radar — Search & Filter Script
+"""X Reply Radar - Search & Filter Script
 
 Runs xurl searches against the X/Twitter API v2 recent search endpoint,
 filters candidates, and writes results to candidates.json.
 
-Standalone — no Hermes tools needed, just subprocess + xurl.
+Standalone - no Hermes tools needed, just subprocess + xurl.
 
 Configuration via environment variables:
-  X_REPLY_RADAR_DIR     — data directory (default: ~/.x-reply-radar)
-  X_REPLY_RADAR_XURL     — path to xurl binary (default: ~/.local/bin/xurl)
-  X_REPLY_RADAR_MY_ID    — your X user ID (to skip self-posts, optional)
-  X_REPLY_RADAR_QUERIES — comma-separated list of search queries (optional override)
+  X_REPLY_RADAR_DIR     - data directory (default: ~/.x-reply-radar)
+  X_REPLY_RADAR_XURL     - path to xurl binary (default: ~/.local/bin/xurl)
+  X_REPLY_RADAR_MY_ID    - your X user ID (to skip self-posts, optional)
+  X_REPLY_RADAR_QUERIES - comma-separated list of search queries (optional override)
 """
 import subprocess
 import json
@@ -26,7 +26,7 @@ MY_ID = os.environ.get("X_REPLY_RADAR_MY_ID", "")
 RESULTS_DIR = DATA_DIR
 CANDIDATES_FILE = os.path.join(RESULTS_DIR, "candidates.json")
 
-# Default query set — tuned for AI builders, adjust for your own goal.
+# Default query set - tuned for AI builders, adjust for your own goal.
 # Override at runtime with X_REPLY_RADAR_QUERIES (comma-separated).
 DEFAULT_QUERIES = [
     '"just shipped" AI agent lang:en',

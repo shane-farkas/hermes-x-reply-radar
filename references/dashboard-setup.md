@@ -85,14 +85,24 @@ Or use a scheduler like Hermes Agent's cron system for agent-driven runs that al
 
 ### 7. On-demand reply generation (optional)
 
-Set `TOGETHER_API_KEY` to enable the "Generate Reply" button on the All Filtered tab:
+Set an LLM API key to enable the "Generate Reply" button on the All Filtered tab. Pick a provider with `X_REPLY_RADAR_LLM_PROVIDER` (`together`, `openai`, or `anthropic`) and set the matching key:
 
 ```bash
+# Together (default)
 export TOGETHER_API_KEY=your_key_here
-# or write to ~/.x-reply-radar/.env
+
+# or OpenAI
+export X_REPLY_RADAR_LLM_PROVIDER=openai
+export OPENAI_API_KEY=your_key_here
+
+# or Anthropic
+export X_REPLY_RADAR_LLM_PROVIDER=anthropic
+export ANTHROPIC_API_KEY=your_key_here
+
+# any of these can also go in ~/.x-reply-radar/.env
 ```
 
-The server uses Llama-3.3-70B by default. Override with `X_REPLY_RADAR_LLM_MODEL` and `X_REPLY_RADAR_LLM_URL` for any OpenAI-compatible API.
+Each provider has a default model (`Llama-3.3-70B`, `gpt-4o-mini`, `claude-haiku-4-5`). Override with `X_REPLY_RADAR_LLM_MODEL`, or set `X_REPLY_RADAR_LLM_URL` to target any other OpenAI-compatible endpoint.
 
 ## Results JSON schema
 
@@ -103,7 +113,7 @@ Each results file has `timestamp`, `stats`, `candidates` (5-8 selected with draf
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | Dashboard shows "Loading..." forever | server.py not running | Check if process is running |
-| Copy button clicks but nothing copies | Non-HTTPS access (e.g. tailscale IP) | server.py has execCommand fallback — make sure you have the latest version |
+| Copy button clicks but nothing copies | Non-HTTPS access (e.g. tailscale IP) | server.py has execCommand fallback - make sure you have the latest version |
 | Cron runs but no results file appears | xurl auth expired or search.py failed | Run `python3 search.py` manually to diagnose |
 | New results don't appear on dashboard | Browser cache | Dashboard auto-refreshes every 5 min; hard refresh with Ctrl+Shift+R |
-| Tabs stack vertically instead of side by side | Tabs container missing `class="tabs"` | Add `class="tabs"` to the div — the CSS targets the class, not the id |
+| Tabs stack vertically instead of side by side | Tabs container missing `class="tabs"` | Add `class="tabs"` to the div - the CSS targets the class, not the id |
