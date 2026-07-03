@@ -62,7 +62,7 @@ check_xurl() {
         return 0
     fi
     warn "xurl not found."
-    echo "  Install from: https://github.com/shane-farkas/xurl"
+    echo "  Install from: https://github.com/xdevplatform/xurl"
     return 1
 }
 
