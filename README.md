@@ -4,7 +4,7 @@ Strategic X/Twitter engagement finder with a web dashboard. Searches X for recen
 
 ## What it does
 
-1. **Searches** X for recent posts (last 4 hours) matching your target audience
+1. **Searches** X for recent posts matching your target audience
 2. **Filters** out buried threads, dead posts, retweets, crypto, and philosophical noise
 3. **Ranks** by builder signals + engagement to surface the best candidates
 4. **Drafts** replies in your voice for manual review and posting
