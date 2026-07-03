@@ -104,6 +104,16 @@ export ANTHROPIC_API_KEY=your_key_here
 
 Each provider has a default model (`Llama-3.3-70B`, `gpt-4o-mini`, `claude-haiku-4-5`). Override with `X_REPLY_RADAR_LLM_MODEL`, or set `X_REPLY_RADAR_LLM_URL` to target any other OpenAI-compatible endpoint.
 
+### Reasoning models (DeepSeek-V4-Pro, etc.)
+
+Some models on Together and other OpenAI-compatible providers are "reasoning" models. By default they spend the entire `max_tokens` budget on internal thinking and return an empty `content` string. If you point the radar at a reasoning model (e.g. `deepseek-ai/DeepSeek-V4-Pro`), set:
+
+```bash
+export X_REPLY_RADAR_LLM_DISABLE_REASONING=1
+```
+
+This adds `reasoning: {enabled: false}` to the request body, which Together and most OpenAI-compatible providers honor to suppress thinking output. Anthropic provider uses a separate mechanism and is unaffected.
+
 ## Results JSON schema
 
 Each results file has `timestamp`, `stats`, `candidates` (5-8 selected with draft replies), and `filtered_all` (all posts that passed filters).

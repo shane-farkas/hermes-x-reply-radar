@@ -12,6 +12,9 @@ Configuration via environment variables:
   X_REPLY_RADAR_LLM_PROVIDER which LLM to use: together (default), openai, or anthropic
   X_REPLY_RADAR_LLM_MODEL    model name (default depends on the provider)
   X_REPLY_RADAR_LLM_URL      override the API endpoint (default depends on the provider)
+  X_REPLY_RADAR_LLM_DISABLE_REASONING  if set (1/true/yes), sends reasoning:{enabled:false} to OpenAI-compatible providers
+                                        (needed for reasoning models like DeepSeek-V4-Pro on Together, which otherwise
+                                         burn max_tokens on thinking and return empty content)
   X_REPLY_RADAR_REPLY_PROMPT system prompt for reply generation (see DEFAULT_REPLY_PROMPT below)
 
 API key: set the key env var for your provider (TOGETHER_API_KEY, OPENAI_API_KEY,
@@ -81,7 +84,8 @@ Rules:
 - Casual, direct, lowercase, brief
 - One sharp technical question or observation per reply. That's it.
 - No cheerleading, no opening with praise ("great post!", "love this!")
-- No em dashes. No AI-sounding vocabulary ("delve", "tapestry", "navigate", "it's worth noting")
+- **No em dashes. Ever.** Use commas, periods, or restructure the sentence instead. Em dashes are an AI-writing tell.
+- No AI-sounding vocabulary ("delve", "tapestry", "navigate", "it's worth noting")
 - No generic platitudes. No "congrats on shipping!" unless you have something specific to add after it.
 - Match the register of the post. Technical if they're technical, casual if they're casual.
 - Keep under 280 characters when possible.
@@ -155,7 +159,7 @@ def generate_reply_llm(post_data: dict) -> dict:
     else:
         # OpenAI-compatible chat completions (Together, OpenAI, or any
         # compatible endpoint via X_REPLY_RADAR_LLM_URL).
-        body = json.dumps({
+        body_dict = {
             "model": LLM_MODEL,
             "messages": [
                 {"role": "system", "content": REPLY_SYSTEM_PROMPT},
@@ -163,7 +167,17 @@ def generate_reply_llm(post_data: dict) -> dict:
             ],
             "temperature": 0.5,
             "max_tokens": 200,
-        }).encode()
+        }
+        # Reasoning models (e.g. DeepSeek-V4-Pro on Together) burn the entire
+        # max_tokens budget on internal "thinking" tokens and return an empty
+        # content string. Setting X_REPLY_RADAR_LLM_DISABLE_REASONING=1 sends
+        # the standard OpenAI-style reasoning:{enabled:false} flag, which
+        # Together and most OpenAI-compatible providers honor to suppress
+        # thinking output. Anthropic uses thinking={"type":"disabled"}
+        # separately and is handled below.
+        if os.environ.get("X_REPLY_RADAR_LLM_DISABLE_REASONING", "").lower() in ("1", "true", "yes"):
+            body_dict["reasoning"] = {"enabled": False}
+        body = json.dumps(body_dict).encode()
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
