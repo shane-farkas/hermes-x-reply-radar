@@ -2,6 +2,8 @@
 
 Strategic X/Twitter engagement finder with a web dashboard. Searches X for recent posts worth replying to, filters out noise, drafts replies in your voice for manual review - **never auto-posts**.
 
+![Robotics & Physical AI track dashboard](assets/dashboard-robotics.jpg)
+
 ## What it does
 
 1. **Searches** X for recent posts matching your target audience
@@ -214,11 +216,16 @@ Each run writes `results_YYYYMMDD_HHMMSS.json`:
 
 ## Dashboard UI
 
+The dashboard is a single-page app served by `server.py` on port 8747. The screenshot at the top shows the Robotics & Physical AI track with two surfaced candidates.
+
+Features:
 - **Suggested tab** - selected candidates with draft replies, copy buttons, "Open on X" links
 - **All Filtered tab** - every post that passed filters but wasn't selected. Each card has a "Generate Reply" button for on-demand LLM drafting.
 - **History dropdown** - browse past runs
 - **Copy buttons** - with `execCommand` fallback for non-HTTPS access (e.g. over Tailscale IP)
 - **Auto-refresh** - every 5 minutes
+
+Each card shows the author + bio, the post text, engagement metrics (replies, likes, retweets, impressions), the AI's reasoning for why it was selected, the suggested draft reply, and any notes (e.g. flagging accounts that may be promotional rather than the original builder).
 
 ## Hermes Agent Integration
 
