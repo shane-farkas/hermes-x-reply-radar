@@ -50,17 +50,23 @@ The standalone `search.py` does **not** use the shortcuts - it calls the raw `/2
 
 ## Quick Start
 
-### Tell your agent to install (recommended for remote Hermes)
+Pick whichever install path matches how you run Hermes:
 
-If you run Hermes Agent on a remote server (VPS, Docker, etc.), give your agent the install command and ask it to run it:
+### Option 1: Paste the repo URL into Hermes (recommended)
 
-> Install x-reply-radar: run `curl -fsSL https://raw.githubusercontent.com/shane-farkas/hermes-x-reply-radar/main/install.sh | bash`
+If you run Hermes Agent anywhere (local, VPS, Docker), the simplest path is to send your agent the link and let it do the install. Hermes will detect its environment and run the right steps.
 
-Your agent will execute the installer on the server where Hermes runs.
+> Install this skill: https://github.com/shane-farkas/hermes-x-reply-radar
 
-### One-line install (local Hermes only)
+Your agent will clone the repo, copy `SKILL.md` to `~/.hermes/skills/social-media/x-reply-radar/`, check that `xurl` is installed and authenticated, run a search to verify the pipeline, and start the dashboard. You don't need to SSH into anything.
 
-If you have direct shell access to the machine where Hermes runs:
+After install, ask Hermes:
+
+> Set up the AI Builders x-reply-radar cron to run twice a day and send me the results on Telegram
+
+### Option 2: One-line install (direct shell access)
+
+If you have shell access to the machine where Hermes runs and want to install without going through the agent:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/shane-farkas/hermes-x-reply-radar/main/install.sh | bash
@@ -70,7 +76,9 @@ The installer detects whether you're running Hermes Agent and installs according
 - **Hermes**: copies `SKILL.md` to `~/.hermes/skills/social-media/x-reply-radar/`
 - **Other agents**: copies scripts to `./` for direct invocation
 
-### Manual setup
+### Option 3: Manual setup
+
+For full control, or if you just want to try the radar without installing anything:
 
 ```bash
 # Clone
