@@ -233,6 +233,40 @@ This repo includes a `SKILL.md` for [Hermes Agent](https://hermes-agent.nousrese
 
 See [`SKILL.md`](SKILL.md) and [`references/dashboard-setup.md`](references/dashboard-setup.md) for the full Hermes integration guide.
 
+### Setting up a new track or objective
+
+Once installed, the radar defaults to a single AI Builders track with built-in queries and filter rules. To point it at a different audience or goal, just ask your Hermes agent in plain language. The agent will update the search script and cron job for you.
+
+**Example prompts** (copy-paste these into your Hermes chat):
+
+> Set up an x-reply-radar for indie SaaS founders shipping dev tools. Find posts where they're building, asking for feedback, or stuck on something. Skip generic "growth advice" content and any posts mentioning crypto. Use these queries: `"just shipped" SaaS`, `"working on" dev tool`, `"built a" CLI`, `"looking for feedback" SaaS`, `"struggling with" auth`. Filter out posts with < 5 likes and skip authors under 500 followers. Draft replies that ask one pointed question about their tech stack.
+
+> Add a second x-reply-radar track for drone autonomy and PX4/ArduPilot developers. Search for: `PX4`, `ArduPilot`, `"offboard mode"`, `MAVROS`, `ROS2 drone`, `#dronedev lang:en`. Skip pure research papers and job postings. Reply with technical questions about their control stack, sim-to-real setup, or compute budget.
+
+> Set up an x-reply-radar for climate tech founders. Find posts about: carbon capture startups, grid storage, climate fundraising rounds, Series A climate. Skip crypto-flavored "carbon credits" and policy-only posts. Draft replies asking about their hardware, supply chain, or unit economics. Casual lowercase voice, no em dashes.
+
+> Make a research-only x-reply-radar for ML papers and benchmarks. Search: `arxiv.org`, `"benchmark results"`, `"SOTA"`, `"trained a model"`. No reply drafting - just collect the post links and authors into a daily digest I can scan. Skip posts without a paper link.
+
+> Switch my existing x-reply-radar queries to focus on agent infrastructure specifically: memory, RAG, tool use, evals. Queries: `"agent memory"`, `"RAG"`, `"tool use"`, `"agent eval"`, `"context engineering"`. Builder signals should include: agent, memory, RAG, evals, MLOps, LangChain, LlamaIndex, vector.
+
+**What Hermes will change behind the scenes:**
+- Edit `search.py`'s `QUERIES` list (or add `X_REPLY_RADAR_QUERIES` to your env)
+- Update `builder_signals` inside `search.py`'s `main()` to match your audience vocabulary
+- Add any domain-specific skip rules (e.g. crypto terms, research-paper-only posts)
+- Recreate or update the cron job with the new goal + style rules in the prompt
+- Restart the dashboard service
+
+**Multi-track setup:** Each track needs its own search script, state file, results dir, and cron job with a 5-minute stagger between scheduled times (e.g. `0 7,15 * * *` and `5 7,15 * * *`). Hermes handles the boilerplate; just say "add a second track for X" and it will scaffold the files, set up the cron, and verify the dashboard shows the new tab.
+
+**Tips for good prompts to Hermes:**
+- Name the audience concretely ("indie SaaS founders shipping dev tools", not "tech people")
+- List 3-6 example queries you want it to run (Hermes can add more, but seeds help)
+- Call out what to skip (crypto, motivational, generic advice, retweets)
+- Specify your voice (casual/technical/brief, what to avoid like em dashes or AI vocab)
+- Mention any repo context if you want the agent to reference your projects in replies
+
+For the underlying mechanics, see `references/multi-track-deployment.md`.
+
 ## How filtering works
 
 Posts are filtered out if they:
