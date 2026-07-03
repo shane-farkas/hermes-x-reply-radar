@@ -294,7 +294,9 @@ async function loadResults(){
   }
   sel.style.display='block';
   sel.innerHTML=data.files.map((f,i)=>{
-    const l=f.replace('results_','').replace('.json','').replace(/(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})/,'$1-$2-$3 $4:$5:$6');
+    // Filename is UTC: results_YYYYMMDD_HHMMSS.json -> parse as UTC, render in local TZ
+    const m=f.match(/results_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})\.json/);
+    const l=m?new Date(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6])).toLocaleString():f;
     return `<option value="${f}" ${i===0?'selected':''}>${l}</option>`;
   }).join('');
   loadResult(data.files[0]);
